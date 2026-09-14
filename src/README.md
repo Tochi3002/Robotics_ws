@@ -22,3 +22,26 @@ Verificar los topicos activos: ros2 topic list
 Ver informacion del topico: ros2 topic info /velocity
 Visualizar el grafo de comunicacion: ros2 run rqt_graph rqt_graph
 
+
+## Actividad 2: Publicador y subscriptor con turtlesim
+
+### Descripcion breve
+A partir de los scripts de la actividad anterior, se crearon dos nuevos nodos (velocity_turtle_pub.py y velocity_turtle_subs.py) para controlar y monitorear la velocidad de traslacion de la tortuga simulada de turtlesim.
+
+### Modificaciones realizadas
+Se copiaron velocity_publisher.py y velocity_subscriber.py con los nuevos nombres. En el publicador se cambio el tipo de mensaje de std_msgs/msg/Float32 a geometry_msgs/msg/Twist, y el topico de /velocity a /turtle1/cmd_vel, que es el topico que escucha turtlesim para mover a la tortuga. El incremento se cambio para ir de 0.0 a 1.2 en pasos de 0.1 cada 0.5 segundos, y en vez de reiniciar el ciclo, al llegar a 1.2 se publica un mensaje con velocidad 0.0 y el nodo deja de publicar, deteniendo a la tortuga. En el subscriptor solo se cambio el tipo de mensaje y el topico al que se suscribe, para que coincida con el nuevo publicador.
+
+### Funcionamiento
+velocity_turtle_pub.py publica mensajes tipo geometry_msgs/msg/Twist al topico /turtle1/cmd_vel, usando el campo linear.x para indicar la velocidad de traslacion de la tortuga. velocity_turtle_subs.py se suscribe al mismo topico y tipo de mensaje, y muestra en consola cada valor de velocidad recibido.
+
+### Comandos utilizados
+Ejecutar turtlesim: ros2 run turtlesim turtlesim_node
+Ejecutar el publicador: python3 velocity_turtle_pub.py
+Ejecutar el subscriptor (en otra terminal): python3 velocity_turtle_subs.py
+Verificar los nodos activos: ros2 node list
+Verificar los topicos activos: ros2 topic list
+Ver informacion del topico: ros2 topic info /turtle1/cmd_vel
+Visualizar el grafo de comunicacion: rqt_graph
+
+### Problemas encontrados
+No se presentaron problemas relevantes durante el desarrollo del codigo; la modificacion del publicador y el subscriptor funciono correctamente desde las primeras pruebas.
