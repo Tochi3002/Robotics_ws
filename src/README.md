@@ -45,3 +45,26 @@ Visualizar el grafo de comunicacion: rqt_graph
 
 ### Problemas encontrados
 No se presentaron problemas relevantes durante el desarrollo del codigo; la modificacion del publicador y el subscriptor funciono correctamente desde las primeras pruebas.
+
+## Actividad 3: Comunicacion con ESP32 - Ejemplo LED
+
+### Descripcion breve
+Se agrego el paquete colmibot_firmware con el sketch LED_Serial.ino para el ESP32, y se probo la comunicacion entre ROS2 y el ESP32 usando los nodos led_blink.py y serial_bridge.py para encender y apagar un LED.
+
+### Funcionamiento
+LED_Serial.ino corre en el ESP32: configura el pin GPIO2 (LED integrado de la placa) como salida y escucha el puerto serial. Si recibe el caracter '1' enciende el LED, si recibe '0' lo apaga.
+
+led_blink.py publica mensajes de tipo std_msgs/msg/Int32 al topico /led_command cada 1 segundo, alternando entre 1 y 0. serial_bridge.py se suscribe al topico /led_command y, por cada mensaje recibido, lo traduce a un caracter ('1' o '0') que envia por el puerto serial /dev/ttyUSB0 hacia el ESP32.
+
+### Comandos utilizados
+Subir el sketch al ESP32: se realizo desde Arduino IDE 2.3.10 seleccionando la tarjeta ESP32 Dev Module y el puerto /dev/ttyUSB0
+Ejecutar el puente serial: python3 serial_bridge.py
+Ejecutar el publicador (en otra terminal): python3 led_blink.py
+Verificar los nodos activos: ros2 node list
+Verificar los topicos activos: ros2 topic list
+Ver informacion del topico: ros2 topic info /led_command
+Visualizar el grafo de comunicacion: rqt_graph
+
+### Problemas encontrados
+Al instalar Arduino IDE en la maquina virtual, la aplicacion no abria por un error de sandbox de Electron; se soluciono ejecutando el AppImage con la bandera --no-sandbox. Tambien el puerto serial no era accesible por permisos; se soluciono agregando el usuario al grupo dialout con sudo usermod -a -G dialout $USER y reiniciando la sesion para que el cambio de grupo se aplicara.
+
