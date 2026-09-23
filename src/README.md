@@ -68,3 +68,25 @@ Visualizar el grafo de comunicacion: rqt_graph
 ### Problemas encontrados
 Al instalar Arduino IDE en la maquina virtual, la aplicacion no abria por un error de sandbox de Electron; se soluciono ejecutando el AppImage con la bandera --no-sandbox. Tambien el puerto serial no era accesible por permisos; se soluciono agregando el usuario al grupo dialout con sudo usermod -a -G dialout $USER y reiniciando la sesion para que el cambio de grupo se aplicara.
 
+
+## Actividad 4: Comunicacion con ESP32 - Ejemplo Potenciometro
+
+### Descripcion breve
+Se probo la comunicacion entre ROS2 y el ESP32 usando el sketch ADC_Pot.ino junto con los nodos analog_serial_pub.py y analog_subs.py, para leer el valor de un potenciometro conectado al ESP32 mediante una protoboard.
+
+### Funcionamiento
+ADC_Pot.ino corre en el ESP32: lee el valor analogico del pin GPIO15 (donde esta conectada la pata central del potenciometro) y lo envia por el puerto serial cada 100 milisegundos, como un numero entre 0 y 4095.
+
+analog_serial_pub.py lee el puerto serial /dev/ttyUSB0, toma cada valor recibido del ESP32 y lo publica como un mensaje de tipo std_msgs/msg/Int32 al topico /analog. analog_subs.py se suscribe al topico /analog y muestra en consola cada valor recibido.
+
+### Comandos utilizados
+Subir el sketch al ESP32: se realizo desde Arduino IDE 2.3.10 seleccionando la tarjeta ESP32 Dev Module y el puerto /dev/ttyUSB0
+Ejecutar el publicador: python3 analog_serial_pub.py
+Ejecutar el subscriptor (en otra terminal): python3 analog_subs.py
+Verificar los nodos activos: ros2 node list
+Verificar los topicos activos: ros2 topic list
+Ver informacion del topico: ros2 topic info /analog
+Visualizar el grafo de comunicacion: rqt_graph
+
+### Problemas encontrados
+Al hacer la primera prueba con el potenciometro, el valor leido se mantenia practicamente fijo; se debia a que la perilla del potenciometro no estaba siendo girada, no a un problema real del circuito ni del codigo. Al girar la perilla, el valor cambio correctamente entre 0 y 4095.
