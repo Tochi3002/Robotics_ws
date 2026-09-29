@@ -131,3 +131,42 @@ En la primera version de turtle_controller.py se uso un valor central teorico fi
 ### Asignacion de pines de la ESP32
 GPIO34: entrada analogica, eje X del joystick (VRx)
 GPIO35: entrada analogica, eje Y del joystick (VRy)
+
+## Actividad 6: Archivo launch para el sistema de velocidad
+
+### Descripcion breve
+Se creo el archivo velocity_system.launch.py, que ejecuta los nodos velocity_publisher y velocity_subscriber al mismo tiempo desde una sola terminal con el comando ros2 launch, en lugar de abrir una terminal para cada nodo como se hacia en la primera actividad.
+
+### Que se genero
+Siguiendo la presentacion 4-Launch, se creo la carpeta launch dentro del paquete basics del workspace robotics_ws y en ella el archivo velocity_system.launch.py (en este repositorio se encuentra en src/launch). Tambien se modifico el setup.py del paquete en dos partes: en data_files se agrego la ruta del archivo launch para que se instale al compilar, y en console_scripts se registraron velocity_publisher y velocity_subscriber para que ROS2 pueda encontrarlos por nombre.
+
+### Funcionamiento
+velocity_system.launch.py define la funcion generate_launch_description(), que regresa un LaunchDescription con dos Node. Cada Node indica el paquete (basics) y el nombre del ejecutable registrado en setup.py, y usa output='screen' para que los mensajes de ambos nodos se vean en la misma terminal. Al ejecutarlo, velocity_publisher publica un mensaje Float32 en el topico /velocity cada 0.5 segundos, aumentando la velocidad de 0.0 a 1.5 m/s y reiniciando en 0.0, y velocity_subscriber recibe cada valor y lo imprime.
+
+### Comprobacion
+Con el launch en ejecucion, en otra terminal se verifico lo siguiente:
+- ros2 node list mostro los nodos /velocity_publisher y /velocity_subscriber.
+- ros2 topic list mostro el topico /velocity.
+- ros2 topic info /velocity mostro el tipo std_msgs/msg/Float32 con 1 publisher y 1 subscriber.
+- rqt_graph, en modo Nodes/Topics (all), mostro la conexion velocity_publisher -> /velocity -> velocity_subscriber.
+
+### Comandos utilizados
+Compilar el paquete: colcon build --packages-select basics
+Cargar el workspace: source install/setup.bash
+Verificar los ejecutables registrados: ros2 pkg executables basics
+Ejecutar el launch: ros2 launch basics velocity_system.launch.py
+Verificar los nodos activos: ros2 node list
+Verificar los topicos activos: ros2 topic list
+Ver informacion del topico: ros2 topic info /velocity
+Ver un mensaje del topico: ros2 topic echo /velocity --once
+Visualizar el grafo de comunicacion: rqt_graph
+
+### Problemas encontrados
+En las actividades anteriores los nodos se ejecutaban con python3, por lo que la seccion console_scripts de setup.py estaba vacia. El launch busca los nodos por nombre, asi que fue necesario registrarlos en console_scripts antes de compilar.
+
+La primera vez que se ejecuto ros2 topic list no aparecia /velocity y ros2 topic info /velocity respondia Unknown topic, aunque ros2 topic echo si recibia mensajes y rqt_graph si mostraba el topico. Al repetir los comandos unos segundos despues el topico ya aparecia; esto se debe a que el daemon de ROS2 apenas estaba iniciando y todavia no descubria el topico.
+
+Al detener el launch con Ctrl+C aparecen mensajes KeyboardInterrupt y process has died con exit code -2. Esto es la interrupcion enviada con Ctrl+C y no una falla del launch.
+
+### Video
+Evidencia de la ejecucion del launch y su comprobacion: [Ver video en Google Drive](https://drive.google.com/file/d/1bPA1DMds35-zMymm6oaXHYXsHtUVBufa/view?usp=sharing)
