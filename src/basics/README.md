@@ -2,18 +2,39 @@
 
 **Alumno:** Axalli Lopez
 
-## Descripcion
+## Descripcion general del paquete basics
+basics es un paquete de ROS2 Jazzy de tipo ament_python que reune los nodos desarrollados durante las sesiones guiadas del Seminario de Titulacion: comunicacion publicador-subscriptor, control de Turtlesim, comunicacion serial con una ESP32 (LED, potenciometro y joystick) y archivos launch para ejecutar varios nodos con un solo comando.
+
+### Estructura del paquete
+    basics/
+      README.md, package.xml, setup.py, setup.cfg, resource/
+      basics/        nodos de ROS2 en Python
+      esp32_basics/  sketches de la ESP32 (ADC_Pot, LED_Serial, joystick) y scripts seriales de prueba
+      launch/        velocity_system.launch.py y turtle_joy_controller.launch.py
+
+### Compilar y ejecutar
+    cd ~/robotics_ws
+    colcon build --packages-select basics
+    source install/setup.bash
+    ros2 launch basics velocity_system.launch.py
+    ros2 launch basics turtle_joy_controller.launch.py
+
+En las actividades 1 a 5 los nodos se ejecutaban directamente con python3. A partir de la actividad 6 se registraron en console_scripts de setup.py los nodos que usan los archivos launch (velocity_publisher, velocity_subscriber, joystick_pub y turtle_controller). En la actividad 7 se reorganizo el repositorio para que src/basics contenga el paquete completo; el firmware que antes estaba en colmibot_firmware/esp32_basics ahora esta en basics/esp32_basics.
+
+## Actividad 1: Publicador y subscriptor de velocidad
+
+### Descripcion breve
 Practica de comunicacion entre nodos en ROS2 usando el patron publicador-subscriptor. Se implementaron dos nodos: uno que publica valores de velocidad y otro que los recibe y los muestra en consola.
 
-## Funcionamiento
+### Funcionamiento
 
-### velocity_publisher.py
+#### velocity_publisher.py
 Nodo que publica mensajes de tipo std_msgs/msg/Float32 al topico /velocity cada 0.5 segundos. El valor de velocidad aumenta de 0.1 en 0.1, empezando en 0.0, hasta llegar a 1.5, momento en el cual se reinicia a 0.0 y el ciclo se repite.
 
-### velocity_subscriber.py
+#### velocity_subscriber.py
 Nodo que se suscribe al topico /velocity y recibe los mensajes de tipo Float32 publicados por velocity_publisher.py. Cada vez que llega un mensaje nuevo, lo muestra en consola con el valor recibido.
 
-## Comandos utilizados
+### Comandos utilizados
 
 Ejecutar el publicador: python3 velocity_publisher.py
 Ejecutar el subscriptor (en otra terminal): python3 velocity_subscriber.py
@@ -138,7 +159,7 @@ GPIO35: entrada analogica, eje Y del joystick (VRy)
 Se creo el archivo velocity_system.launch.py, que ejecuta los nodos velocity_publisher y velocity_subscriber al mismo tiempo desde una sola terminal con el comando ros2 launch, en lugar de abrir una terminal para cada nodo como se hacia en la primera actividad.
 
 ### Que se genero
-Siguiendo la presentacion 4-Launch, se creo la carpeta launch dentro del paquete basics del workspace robotics_ws y en ella el archivo velocity_system.launch.py (en este repositorio se encuentra en src/launch). Tambien se modifico el setup.py del paquete en dos partes: en data_files se agrego la ruta del archivo launch para que se instale al compilar, y en console_scripts se registraron velocity_publisher y velocity_subscriber para que ROS2 pueda encontrarlos por nombre.
+Siguiendo la presentacion 4-Launch, se creo la carpeta launch dentro del paquete basics del workspace robotics_ws y en ella el archivo velocity_system.launch.py (en este repositorio se encuentra en src/basics/launch). Tambien se modifico el setup.py del paquete en dos partes: en data_files se agrego la ruta del archivo launch para que se instale al compilar, y en console_scripts se registraron velocity_publisher y velocity_subscriber para que ROS2 pueda encontrarlos por nombre.
 
 ### Funcionamiento
 velocity_system.launch.py define la funcion generate_launch_description(), que regresa un LaunchDescription con dos Node. Cada Node indica el paquete (basics) y el nombre del ejecutable registrado en setup.py, y usa output='screen' para que los mensajes de ambos nodos se vean en la misma terminal. Al ejecutarlo, velocity_publisher publica un mensaje Float32 en el topico /velocity cada 0.5 segundos, aumentando la velocidad de 0.0 a 1.5 m/s y reiniciando en 0.0, y velocity_subscriber recibe cada valor y lo imprime.
@@ -170,3 +191,47 @@ Al detener el launch con Ctrl+C aparecen mensajes KeyboardInterrupt y process ha
 
 ### Video
 Evidencia de la ejecucion del launch y su comprobacion: [Ver video en Google Drive](https://drive.google.com/file/d/1bPA1DMds35-zMymm6oaXHYXsHtUVBufa/view?usp=sharing)
+
+## Actividad 7: Launch del control de Turtlesim con joystick y reestructura del paquete
+
+### Descripcion breve
+Se creo el archivo turtle_joy_controller.launch.py, que ejecuta con un solo comando los tres nodos de la actividad del joystick: turtlesim_node, joystick_pub y turtle_controller. Ademas se reorganizo el repositorio para que src/basics contenga el paquete completo de ROS2.
+
+### Que se genero
+Se creo turtle_joy_controller.launch.py en la carpeta launch del paquete. En setup.py se agrego este archivo en data_files y se registraron joystick_pub y turtle_controller en console_scripts para que el launch pueda encontrarlos por nombre.
+
+### Conexion del joystick con la ESP32
+VRx del joystick a D34 (GPIO34), eje X
+VRy del joystick a D35 (GPIO35), eje Y
++5V del joystick a 3V3 de la ESP32
+GND del joystick a GND de la ESP32
+SW sin conectar
+
+### Funcionamiento
+El launch define tres Node. El primero es turtlesim_node del paquete turtlesim, que abre la ventana con la tortuga. El segundo es joystick_pub, que lee del puerto /dev/ttyUSB0 los valores del joystick enviados por la ESP32 y los publica como geometry_msgs/msg/Point en el topico /joystick_raw. El tercero es turtle_controller, que se suscribe a /joystick_raw, toma la primera lectura como centro del joystick (en la prueba quedo en x=1890, y=1936), convierte las lecturas en velocidad lineal y angular, y publica geometry_msgs/msg/Twist en /turtle1/cmd_vel para mover la tortuga. Por la calibracion automatica, el joystick debe estar sin tocar al iniciar el launch.
+
+### Comprobacion
+Con el launch en ejecucion, en otra terminal se verifico lo siguiente:
+- ros2 node list mostro /joystick_pub, /turtle_controller y /turtlesim.
+- ros2 topic info /joystick_raw mostro el tipo geometry_msgs/msg/Point con 1 publisher y 1 subscriber.
+- ros2 topic info /turtle1/cmd_vel mostro el tipo geometry_msgs/msg/Twist con 1 publisher y 1 subscriber.
+- rqt_graph, en modo Nodes/Topics (all), mostro la cadena /joystick_pub -> /joystick_raw -> /turtle_controller -> /turtle1/cmd_vel -> /turtlesim.
+
+### Comandos utilizados
+Verificar que Ubuntu detecta la ESP32: ls /dev/ttyUSB*
+Compilar el paquete: colcon build --packages-select basics
+Cargar el workspace: source install/setup.bash
+Ejecutar el launch: ros2 launch basics turtle_joy_controller.launch.py
+Verificar los nodos activos: ros2 node list
+Verificar los topicos activos: ros2 topic list
+Ver informacion de los topicos: ros2 topic info /joystick_raw y ros2 topic info /turtle1/cmd_vel
+Visualizar el grafo de comunicacion: rqt_graph
+
+### Reestructura del repositorio
+Los nodos pasaron de src/basics a src/basics/basics, el firmware de src/colmibot_firmware/esp32_basics a src/basics/esp32_basics, la carpeta launch de src/launch a src/basics/launch y el README de src a src/basics. Se agregaron package.xml, setup.py, setup.cfg y resource del paquete, y el archivo basics/__init__.py, que es necesario para que ROS2 reconozca los nodos como paquete de Python al compilar.
+
+### Problemas encontrados
+No se presentaron errores en esta actividad. Como en la actividad 6, al detener el launch con Ctrl+C aparecen mensajes KeyboardInterrupt y process has died, que corresponden a la interrupcion y no a una falla.
+
+### Video
+Evidencia de la ejecucion del launch y su comprobacion: [Ver video en Google Drive](https://drive.google.com/file/d/1fcTuRp_OV_WLP7eNzfz_oft5erNqjuQg/view?usp=sharing)
